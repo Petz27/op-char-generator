@@ -8,6 +8,7 @@ debug_flag_error = "[ERROR]"
 debug_flag_output = "[OUT]"
 debug_flag_input = "[IN] "
 
+
 # char_class enums
 class CharClass(Enum):
     BRAWLER = 0
@@ -16,6 +17,7 @@ class CharClass(Enum):
     ROGUE = 3
     WARRIOR = 4
     SPECIALIST = 5
+
 
 class CharRace(Enum):
     HUMAN = 0
@@ -26,32 +28,55 @@ class CharRace(Enum):
     TONTATTA = 5
 
 
-def enumToString(enum):
+def enumClassToString(enum):
     if enum == CharClass.BRAWLER:
-        return "BRAWLER"
+        return "Brawler"
     elif enum == CharClass.SWORDSMAN:
-        return "SWORDSMAN"
+        return "Swordsman"
     elif enum == CharClass.MARKSMAN:
-        return "MARKSMAN"
+        return "Marksman"
     elif enum == CharClass.ROGUE:
-        return "ROGUE"
+        return "Rogue"
     elif enum == CharClass.WARRIOR:
-        return "WARRIOR"
+        return "Warrior"
     elif enum == CharClass.SPECIALIST:
-        return "SPECIALIST"
+        return "Specialist"
 
-def spendAttributePoints(points, level, class_):
-    points += 6*8
+
+def enumRaceToString(enum):
+    if enum == CharRace.HUMAN:
+        return "Human"
+    elif enum == CharRace.FISHMAN:
+        return "Fishman"
+    elif enum == CharRace.MINK:
+        return "Mink"
+    elif enum == CharRace.SKYISLANDER:
+        return "Sky Islander"
+    elif enum == CharRace.AMAZONESS:
+        return "Amazoness"
+    elif enum == CharRace.TONTATTA:
+        return "Tontatta"
+
+
+def spend_attribute_points(points, level, class_):
+    points += 6 * 8
     val_list = [(8 + random.randint(0, points)) for x in range(6)]
     score = sum(val_list)
     while score > points:
         val_list.sort()
-        if val_list[5] > 24:
+        if val_list[1] > 9:
+            decrease = 0
+        # third best stat max at 14
+        elif val_list[3] > 14:
+            decrease = 3
+        # max value is 24
+        elif val_list[5] > 24:
             decrease = 5
+        # no character with a level lower than 5 should have values above 16
         elif level < 5 and val_list[5] > 16:
             decrease = 5
         else:
-            decrease = random.randint(0,5)
+            decrease = random.randint(0, 5)
         if level >= 10:
             while val_list[decrease] < 10:
                 decrease = random.randint(0, 5)
@@ -63,10 +88,10 @@ def spendAttributePoints(points, level, class_):
 
     if class_ == CharClass.BRAWLER:
         val_list.sort()
-        int_, wis_, cha_, con_, dex_, str_ = val_list
+        int_, cha_, dex_, wis_, con_, str_ = val_list
     elif class_ == CharClass.WARRIOR:
         val_list.sort()
-        wis_, int_, cha_, dex_, str_,con_ = val_list
+        wis_, int_, cha_, dex_, str_, con_ = val_list
     elif class_ == CharClass.SWORDSMAN:
         val_list.sort()
         wis_, int_, cha_, con_, dex_, str_ = val_list
@@ -80,6 +105,7 @@ def spendAttributePoints(points, level, class_):
         random.shuffle(val_list)
         con_, dex_, str_, wis_, int_, cha_ = val_list
     return con_, dex_, str_, wis_, int_, cha_
+
 
 def calculatePointsToSpend(level):
     points = 22
@@ -103,42 +129,66 @@ def calculatePointsToSpend(level):
 
     return points
 
+
 def calcModifier(score):
-    return math.floor((score - 10)/2)
+    return math.floor((score - 10) / 2)
+
 
 def calculatePrimarySkills(class_, strength, dex, intelligence, constitution, wisdom, fav_rank, unfav_rank):
+    base_attack = []
     # calculate skills based on OPD20 formular
-    ua = strength
-    wa = strength
+    if strength > dex:
+        ua = strength
+        base_attack.append("STR")
+        wa = strength
+        base_attack.append("STR")
+    else:
+        ua = dex
+        base_attack.append("DEX")
+        wa = dex
+        base_attack.append("DEX")
+
     # ranged shot is either dex or wis
-    rs = dex
     if wisdom > dex:
         rs = wisdom
-    init = dex
-    # defense is either dex or int
-    defense = dex
+        base_attack.append("WIS")
+    else:
+        rs = dex
+        base_attack.append("DEX")
+
+    # defense and initiative is either dex or int
     if intelligence > dex:
         defense = intelligence
+        base_attack.append("INT")
+        init = intelligence
+        base_attack.append("INT")
+    else:
+        defense = dex
+        base_attack.append("DEX")
+        init = dex
+        base_attack.append("DEX")
+
+
     refsav = dex
     fortsav = constitution
     willsav = wisdom
 
-    # 0 = unarmed strike, 1 = weapon attack, 2 = ranged shot, 3 = initiative, 4 = reflex save, 5 = fortitude save, 6 = willpower save, 7 = defense
-    skills = [ua,wa,rs,init,refsav,fortsav,willsav,defense]
+    # 0 = weapon attack, 1 = unarmed strike, 2 = ranged shot, 3 = defense, 4 = initiative, 5 = fortitude save, 6 = reflex save, 7 = willpower save
     favored = []
     unfavored = []
     if class_ == CharClass.BRAWLER:
-        favored.append(0)
-        favored.append(7)
+        favored.append(2)
+        favored.append(3)
+        favored.append(6)
     if class_ == CharClass.WARRIOR:
-        favored.append(7)
-        favored.append(1)
+        favored.append(3)
+        favored.append(0)
     if class_ == CharClass.SWORDSMAN:
-        favored.append(1)
+        favored.append(0)
     if class_ == CharClass.MARKSMAN:
         favored.append(2)
     if class_ == CharClass.ROGUE:
-        favored.append(1)
+        favored.append(0)
     while len(favored) < 4:
         rand = random.randint(0, 7)
         if rand not in favored:
@@ -146,6 +196,7 @@ def calculatePrimarySkills(class_, strength, dex, intelligence, constitution, wi
     for x in range(0, 8):
         if x not in favored:
             unfavored.append(x)
+    skills = [wa, ua, rs, defense, init, fortsav, refsav, willsav, favored, unfavored, base_attack]
     for element in favored:
         skills[element] += fav_rank
     for element in unfavored:
